@@ -156,6 +156,7 @@ def handle_case(browser: webdriver.Chrome, case: Case, orchestrator_connection: 
     change_tab(browser, tab_index=2)
     if not check_sagslog(browser):
         orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Skipped due to activity in sagslog.")
+        orchestrator_connection.log_info("Skipping: Activity in sagslog.")
         return
 
     change_tab(browser, tab_index=0)
