@@ -200,10 +200,12 @@ def check_queue(case: Case, orchestrator_connection: OrchestratorConnection) -> 
 
     # If the case has been tried more than once before skip it
     if len(queue_elements) > 1:
+        orchestrator_connection.log_info("Skipping: Case has failed in the past.")
         return False
 
     # If it has been marked as done, skip it
     if queue_elements[0].status == QueueStatus.DONE:
+        orchestrator_connection.log_info("Skipping: Case already marked as done.")
         return False
 
     return True
