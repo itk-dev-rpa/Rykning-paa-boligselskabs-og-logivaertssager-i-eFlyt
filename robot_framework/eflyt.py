@@ -1,3 +1,5 @@
+"""This module contains all logic related to the Eflyt system."""
+
 from datetime import date, timedelta
 from dataclasses import dataclass
 import os

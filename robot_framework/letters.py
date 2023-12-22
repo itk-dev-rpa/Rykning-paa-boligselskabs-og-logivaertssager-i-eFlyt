@@ -1,3 +1,5 @@
+"""This module contains text for use in letters."""
+
 LETTER_TO_ANMELDER = """Du har anmeldt flytning til ovenstående adresse.
 
 Vi har sendt et brev til logiværten, der bor på adressen, eller som er registreret som ejer af ejendommen.

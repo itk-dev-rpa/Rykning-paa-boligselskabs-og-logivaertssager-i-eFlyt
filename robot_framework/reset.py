@@ -9,9 +9,9 @@ def reset(orchestrator_connection: OrchestratorConnection) -> None:
     """Clean up, close/kill all programs and start them again. """
     orchestrator_connection.log_trace("Resetting.")
     clean_up(orchestrator_connection)
-    close_all(orchestrator_connection)
-    kill_all(orchestrator_connection)
-    open_all(orchestrator_connection)
+    # close_all(orchestrator_connection)
+    # kill_all(orchestrator_connection)
+    # open_all(orchestrator_connection)
 
 
 def clean_up(orchestrator_connection: OrchestratorConnection) -> None:
