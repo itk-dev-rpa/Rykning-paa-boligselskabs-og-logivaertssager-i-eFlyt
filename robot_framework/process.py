@@ -22,6 +22,7 @@ def process(orchestrator_connection: OrchestratorConnection) -> None:
 
     for case in cases:
         eflyt.handle_case(browser, case, orchestrator_connection)
+        eflyt.clear_downloads(orchestrator_connection)
 
 
 if __name__ == '__main__':
