@@ -154,7 +154,7 @@ def handle_case(browser: webdriver.Chrome, case: Case, orchestrator_connection: 
     open_case(browser, case)
 
     if not check_sagslog(browser):
-        orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Skipped due to activity in sagslog.")
+        orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Sprunget over pga. sagslog.")
         orchestrator_connection.log_info("Skipping: Activity in sagslog.")
         return
 
@@ -167,14 +167,14 @@ def handle_case(browser: webdriver.Chrome, case: Case, orchestrator_connection: 
         change_tab(browser, tab_index=1)
         if not check_beboer(browser, logivaert_name):
             create_note(browser, f"{today} Besked fra robot: Logiværten bor ikke længere på adressen, så der er ikke afsendt en automatisk rykker.")
-            orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Skipped due to logivært no longer living on address.")
+            orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Sprunget over da logivært ikke længere er beboer.")
             return
 
     if send_letter_to_logivaert(browser, letter_title, logivaert_name):
         create_note(browser, f"{today} Besked fra robot: Rykker sendt til logivært {logivaert_name}.")
     else:
         create_note(browser, f"{today} Besked fra robot: Brev kunne ikke sendes til logivært {logivaert_name}, da de ikke er tilmeldt digital post.")
-        orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Logivært can't receive Digital Post.")
+        orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Logivært kan ikke modtage Digital Post.")
         return
 
     check_off_original_letter(browser)
@@ -185,10 +185,10 @@ def handle_case(browser: webdriver.Chrome, case: Case, orchestrator_connection: 
         create_note(browser, f"{today} Besked fra robot: Brev sendt til anmelder.")
     else:
         create_note(browser, f"{today} Besked fra robot: Brev kunne ikke sendes til anmelder, da de ikke er tilmeldt digital post.")
-        orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Anmelder can't receive Digital Post.")
+        orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Anmelder kan ikke modtage Digital Post.")
         return
 
-    orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Case handled successfully.")
+    orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Sag færdigbehandlet.")
 
 
 def check_queue(case: Case, orchestrator_connection: OrchestratorConnection) -> bool:
