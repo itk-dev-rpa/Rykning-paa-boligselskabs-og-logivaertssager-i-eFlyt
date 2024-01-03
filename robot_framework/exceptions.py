@@ -43,6 +43,14 @@ def log_exception(orchestrator_connection: OrchestratorConnection) -> callable:
     Returns:
         callable: A function that can be assigned to sys.excepthook.
     """
-    def inner(exception_type, value, traceback_string):
-        orchestrator_connection.log_error(f"Uncaught Exception:\nType: {exception_type}\nValue: {value}\nTrace: {traceback_string}")
+    def inner(exc_type, exc_value, exc_traceback):
+        trace = "\n".join(traceback.extract_tb(exc_traceback).format())
+
+        lines = [
+            f"Error Type: {exc_type.__name__}",
+            f"Message: {exc_value}",
+            f"Trace:\n{trace}"
+        ]
+        orchestrator_connection.log_error("\n".join(lines))
+
     return inner
