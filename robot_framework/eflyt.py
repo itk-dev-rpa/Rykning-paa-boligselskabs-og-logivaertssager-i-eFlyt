@@ -182,6 +182,7 @@ def handle_case(browser: webdriver.Chrome, case: Case, orchestrator_connection: 
     create_note(browser, f"{today} Besked fra robot: Automatisk rykker sendt til logivært {logivaert_name}, brev sendt til anmelder og deadline flyttet.")
 
     orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Case handled successfully.")
+    clear_downloads(orchestrator_connection)
 
 
 def check_queue(case: Case, orchestrator_connection: OrchestratorConnection) -> bool:
