@@ -2,19 +2,22 @@
 
 from OpenOrchestrator.orchestrator_connection.connection import OrchestratorConnection
 
+from robot_framework import eflyt
+
 
 def reset(orchestrator_connection: OrchestratorConnection) -> None:
     """Clean up, close/kill all programs and start them again. """
     orchestrator_connection.log_trace("Resetting.")
     clean_up(orchestrator_connection)
-    close_all(orchestrator_connection)
-    kill_all(orchestrator_connection)
-    open_all(orchestrator_connection)
+    # close_all(orchestrator_connection)
+    # kill_all(orchestrator_connection)
+    # open_all(orchestrator_connection)
 
 
 def clean_up(orchestrator_connection: OrchestratorConnection) -> None:
     """Do any cleanup needed to leave a blank slate."""
     orchestrator_connection.log_trace("Doing cleanup.")
+    eflyt.clear_downloads(orchestrator_connection)
 
 
 def close_all(orchestrator_connection: OrchestratorConnection) -> None:

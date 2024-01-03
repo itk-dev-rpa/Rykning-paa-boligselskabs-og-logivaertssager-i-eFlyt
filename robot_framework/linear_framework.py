@@ -41,8 +41,8 @@ def main():
             handle_error(f"Process Error #{error_count}", error, None, orchestrator_connection)
 
     reset.clean_up(orchestrator_connection)
-    reset.close_all(orchestrator_connection)
-    reset.kill_all(orchestrator_connection)
+    # reset.close_all(orchestrator_connection)
+    # reset.kill_all(orchestrator_connection)
 
     if config.FAIL_ROBOT_ON_TOO_MANY_ERRORS and error_count == config.MAX_RETRY_COUNT:
         raise RuntimeError("Process failed too many times.")
