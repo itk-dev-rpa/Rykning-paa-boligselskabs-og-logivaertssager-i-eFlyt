@@ -153,9 +153,8 @@ def handle_case(browser: webdriver.Chrome, case: Case, orchestrator_connection: 
 
     open_case(browser, case)
 
-    change_tab(browser, tab_index=2)
     if not check_sagslog(browser):
-        orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Skipped due to activity in sagslog.")
+        orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Sprunget over pga. sagslog.")
         orchestrator_connection.log_info("Skipping: Activity in sagslog.")
         return
 
@@ -167,22 +166,29 @@ def handle_case(browser: webdriver.Chrome, case: Case, orchestrator_connection: 
     if "beboer" in letter_title:
         change_tab(browser, tab_index=1)
         if not check_beboer(browser, logivaert_name):
-            change_tab(browser, tab_index=0)
             create_note(browser, f"{today} Besked fra robot: Logiværten bor ikke længere på adressen, så der er ikke afsendt en automatisk rykker.")
-            orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Skipped due to logivært no longer living on address.")
+            orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Sprunget over da logivært ikke længere er beboer.")
             return
 
-    change_tab(browser, tab_index=3)
-    send_letter_to_anmelder(browser, case, letter_title)
-    send_letter_to_logivaert(browser, letter_title, logivaert_name)
+    if send_letter_to_logivaert(browser, letter_title, logivaert_name):
+        create_note(browser, f"{today} Besked fra robot: Rykker sendt til logivært {logivaert_name}.")
+    else:
+        create_note(browser, f"{today} Besked fra robot: Brev kunne ikke sendes til logivært {logivaert_name}, da de ikke er tilmeldt digital post.")
+        orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Logivært kan ikke modtage Digital Post.")
+        return
 
-    change_tab(browser, tab_index=0)
     check_off_original_letter(browser)
     change_deadline(browser)
-    create_note(browser, f"{today} Besked fra robot: Automatisk rykker sendt til logivært {logivaert_name}, brev sendt til anmelder og deadline flyttet.")
+    create_note(browser, f"{today} Besked fra robot: Deadline flyttet.")
 
-    orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Case handled successfully.")
-    clear_downloads(orchestrator_connection)
+    if send_letter_to_anmelder(browser, case, letter_title):
+        create_note(browser, f"{today} Besked fra robot: Brev sendt til anmelder.")
+    else:
+        create_note(browser, f"{today} Besked fra robot: Brev kunne ikke sendes til anmelder, da de ikke er tilmeldt digital post.")
+        orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Anmelder kan ikke modtage Digital Post.")
+        return
+
+    orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Sag færdigbehandlet.")
 
 
 def check_queue(case: Case, orchestrator_connection: OrchestratorConnection) -> bool:
@@ -237,6 +243,8 @@ def check_sagslog(browser: webdriver.Chrome) -> bool:
     Returns:
         bool: True if the case should be handled, False if it should be skipped.
     """
+    change_tab(browser, tab_index=2)
+
     sagslog_table = browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_sgcPersonTab_GridViewSagslog")
     rows = sagslog_table.find_elements(By.TAG_NAME, "tr")
 
@@ -361,14 +369,19 @@ def check_beboer(browser: webdriver.Chrome, beboer_name: str):
     return False
 
 
-def send_letter_to_anmelder(browser: webdriver.Chrome, case: Case, original_letter: str):
+def send_letter_to_anmelder(browser: webdriver.Chrome, case: Case, original_letter: str) -> bool:
     """Open the 'Breve' tab and send a letter to the anmelder.
 
     Args:
         browser: The webdriver browser object.
         case: The Case object.
         original_letter: The title of the original logiværtserklæring.
+
+    Returns:
+        bool: True if the letter was sent.
     """
+    change_tab(browser, tab_index=3)
+
     click_letter_template(browser, "- Logivært svarer ikke - brev til anmelder - partshø")
 
     # Select the anmelder as the receiver
@@ -376,6 +389,7 @@ def send_letter_to_anmelder(browser: webdriver.Chrome, case: Case, original_lett
 
     select_letter_language(browser, original_letter)
 
+    # Click 'Send brev'
     browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_bcPersonTab_btnSendBrev").click()
 
     # Insert the correct letter text
@@ -387,11 +401,21 @@ def send_letter_to_anmelder(browser: webdriver.Chrome, case: Case, original_lett
     else:
         text_area.send_keys(letters.LETTER_TO_ANMELDER_LOGIVAERT)
 
+    # Click 'Ok'
     browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_bcPersonTab_btnOK").click()
+
+    # Check if a warning appears
+    if check_digital_post_warning(browser):
+        # Click 'Nej'
+        browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_bcPersonTab_btnDeleteLetter").click()
+        return False
+
+    # Click 'Ja'
     browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_bcPersonTab_btnSaveLetter").click()
+    return True
 
 
-def send_letter_to_logivaert(browser: webdriver.Chrome, original_letter: str, logivaert_name: str) -> None:
+def send_letter_to_logivaert(browser: webdriver.Chrome, original_letter: str, logivaert_name: str) -> bool:
     """Open the 'Breve' tab and send a rykker to the logivært.
 
     Args:
@@ -399,9 +423,14 @@ def send_letter_to_logivaert(browser: webdriver.Chrome, original_letter: str, lo
         original_letter: The title of the original logiværtserklæring.
         logivaert_name: The name of the logivært.
 
+    Returns:
+        bool: True if the letter was sent.
+
     Raises:
         ValueError: If the correct letter template couldn't be found.
     """
+    change_tab(browser, tab_index=3)
+
     # Pick the correct letter template
     if "beboer" in original_letter and "manuel" in original_letter:
         template_name = "- Rykker - Logiværtserklæring beboer - Manuel"
@@ -419,8 +448,18 @@ def send_letter_to_logivaert(browser: webdriver.Chrome, original_letter: str, lo
     select_letter_receiver(browser, logivaert_name)
     select_letter_language(browser, original_letter)
 
+    # Click 'Send brev'
     browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_bcPersonTab_btnSendBrev").click()
+
+    # Check if a warning appears
+    if check_digital_post_warning(browser):
+        # Click 'Nej'
+        browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_bcPersonTab_btnDeleteLetter").click()
+        return False
+
+    # Click 'Ja'
     browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_bcPersonTab_btnSaveLetter").click()
+    return True
 
 
 def check_off_original_letter(browser: webdriver.Chrome) -> None:
@@ -429,6 +468,7 @@ def check_off_original_letter(browser: webdriver.Chrome) -> None:
     Args:
         browser: The webdriver browser object.
     """
+    change_tab(browser, tab_index=0)
     opgave_table = browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_moPersonTab_gvManuelOpfolgning")
     check_box = opgave_table.find_element(By.XPATH, "(//input[contains(@id, '_chkSvarmodtaget')])[last()]")
     check_box.click()
@@ -440,6 +480,8 @@ def change_deadline(browser: webdriver.Chrome) -> None:
     Args:
         browser: The webdriver browser object.
     """
+    change_tab(browser, tab_index=0)
+
     new_deadline = (date.today() + timedelta(days=14)).strftime("%d-%m-%Y")
 
     deadline_input = browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_ncPersonTab_txtDeadline")
@@ -461,6 +503,8 @@ def change_tab(browser: webdriver.Chrome, tab_index: int):
 
 def create_note(browser: webdriver.Chrome, note_text: str):
     """Create a note on the case."""
+    change_tab(browser, tab_index=0)
+
     browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_ncPersonTab_ButtonVisOpdater").click()
 
     text_area = browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_ncPersonTab_txtVisOpdaterNote")
@@ -540,3 +584,17 @@ def select_letter_receiver(browser: webdriver.Chrome, receiver_name: str) -> Non
     name_label = browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_bcPersonTab_lblModtagerName")
     if receiver_name not in name_label.text:
         raise ValueError(f"'{receiver_name}' didn't match the predefined receiver.")
+
+
+def check_digital_post_warning(browser: webdriver.Chrome) -> bool:
+    """Check if a red warning text has appeared warning that
+    a letter must be sent manually.
+
+    Args:
+        browser: The webdriver browser object.
+
+    Returns:
+        bool: True if the warning has appeared.
+    """
+    warning_text = browser.find_elements(By.XPATH, "//font[@color='red']")
+    return len(warning_text) != 0 and "Dokumentet skal sendes manuelt" in warning_text[0].text
