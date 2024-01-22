@@ -298,10 +298,36 @@ def get_information_from_letter(browser: webdriver.Chrome) -> tuple[str]:
 
     # Get the top most text
     logivaert_name = sorted(text_parts)[0][1]
+    logivaert_name = clean_name(logivaert_name)
 
     letter_title = last_letter.find_element(By.XPATH, "../..//span").text
 
     return (letter_title, logivaert_name)
+
+
+def clean_name(name: str) -> str:
+    """Clean up a name that might contain too many spaces.
+    E.g. "Jo hn Do e" -> "John Doe".
+
+    Args:
+        name: The name to clean.
+
+    Returns:
+        The cleaned name.
+    """
+    # Convert to PascalCase
+    name = name.replace(" ", "")
+
+    # Add a space before each upper case letter except the first
+    result = [name[0]]
+
+    for char in name[1:]:
+        if char.isupper():
+            result.extend([' ', char])
+        else:
+            result.append(char)
+
+    return ''.join(result)
 
 
 def wait_for_download(start_time: float):
