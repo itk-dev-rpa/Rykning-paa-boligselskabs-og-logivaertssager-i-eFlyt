@@ -166,7 +166,7 @@ def handle_case(browser: webdriver.Chrome, case: Case, orchestrator_connection: 
     if "beboer" in letter_title:
         change_tab(browser, tab_index=1)
         if not check_beboer(browser, logivaert_name):
-            create_note(browser, f"{today} Besked fra robot: Logiværten bor ikke længere på adressen, så der er ikke afsendt en automatisk rykker.")
+            create_note(browser, f"{today} Besked fra robot: Logiværten, {logivaert_name}, bor ikke længere på adressen, så der er ikke afsendt en automatisk rykker.")
             orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Sprunget over da logivært ikke længere er beboer.")
             return
 
@@ -307,6 +307,7 @@ def get_information_from_letter(browser: webdriver.Chrome) -> tuple[str]:
 
 def clean_name(name: str) -> str:
     """Clean up a name that might contain too many spaces.
+    Reading from a pdf is sometimes messy.
     E.g. "Jo hn Do e" -> "John Doe".
 
     Args:
