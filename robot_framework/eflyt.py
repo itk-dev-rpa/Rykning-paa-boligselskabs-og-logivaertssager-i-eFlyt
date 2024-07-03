@@ -165,7 +165,7 @@ def handle_case(browser: webdriver.Chrome, case: Case, orchestrator_connection: 
     try:
         letter_title, logivaert_name = get_information_from_letter(browser)
     except PyPdfError:
-        create_note(f"{today} Besked fra robot: Logiværtserklæringen kunne ikke læses.")
+        create_note(browser, f"{today} Besked fra robot: Logiværtserklæringen kunne ikke læses.")
         orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Logiværtserklæringen kunne ikke læses.")
         return
 
