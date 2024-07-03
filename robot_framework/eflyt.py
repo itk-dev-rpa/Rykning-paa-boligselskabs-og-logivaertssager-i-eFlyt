@@ -6,6 +6,7 @@ import os
 import time
 
 import pypdf
+from pypdf.errors import PyPdfError
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
@@ -158,10 +159,15 @@ def handle_case(browser: webdriver.Chrome, case: Case, orchestrator_connection: 
         orchestrator_connection.log_info("Skipping: Activity in sagslog.")
         return
 
-    change_tab(browser, tab_index=0)
-    letter_title, logivaert_name = get_information_from_letter(browser)
-
     today = date.today().strftime("%d-%m-%Y")
+
+    change_tab(browser, tab_index=0)
+    try:
+        letter_title, logivaert_name = get_information_from_letter(browser)
+    except PyPdfError:
+        create_note(f"{today} Besked fra robot: Logiværtserklæringen kunne ikke læses.")
+        orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Logiværtserklæringen kunne ikke læses.")
+        return
 
     if "beboer" in letter_title:
         change_tab(browser, tab_index=1)
@@ -272,13 +278,20 @@ def get_information_from_letter(browser: webdriver.Chrome) -> tuple[str]:
 
     Returns:
         (str, str): The title of the letter and the name of the receiver.
+
+    Raises:
+        PyPdfError: If the PDF file couldn't be read.
     """
     last_letter = browser.find_element(By.XPATH, '(//input[contains(@id, "_imbOpgave")])[last()]')
     click_time = time.time()
     last_letter.click()
 
     file_path = wait_for_download(click_time)
-    reader = pypdf.PdfReader(file_path)
+    try:
+        reader = pypdf.PdfReader(file_path)
+    except PyPdfError as e:
+        os.remove(file_path)
+        raise e
 
     text_parts = []
 
