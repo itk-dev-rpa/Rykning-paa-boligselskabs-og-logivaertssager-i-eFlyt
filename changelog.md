@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.2] - 2024-07-03
+
+### Fixed
+
+- Improved comparison of names with special characters.
+- PDF errors are now caught, noted and skipped.
+
 ## [1.1.1] - 2024-01-23
 
 ### Added
