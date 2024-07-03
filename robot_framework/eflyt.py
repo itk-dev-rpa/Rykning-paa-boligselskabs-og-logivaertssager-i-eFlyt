@@ -376,6 +376,7 @@ def clear_downloads(orchestrator_connection: OrchestratorConnection):
 
 def check_beboer(browser: webdriver.Chrome, beboer_name: str):
     """Check if the given person is on the list of beboere.
+    The names are stripped of any whitespace to give a more precise result.
 
     Args:
         browser: The webdriver browser object.
@@ -390,7 +391,7 @@ def check_beboer(browser: webdriver.Chrome, beboer_name: str):
 
     for row in rows:
         name = row.find_element(By.XPATH, "td[3]").text
-        if name == beboer_name:
+        if name.replace(" ", "") == beboer_name.replace(" ", ""):
             return True
 
     return False
