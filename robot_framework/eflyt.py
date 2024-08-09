@@ -1,7 +1,6 @@
 """This module contains all logic related to the Eflyt system."""
 
 from datetime import date, timedelta
-from dataclasses import dataclass
 import os
 import time
 
@@ -12,78 +11,13 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
 from OpenOrchestrator.orchestrator_connection.connection import OrchestratorConnection
 from OpenOrchestrator.database.queues import QueueStatus
+from itk_dev_shared_components import eflyt
+from itk_dev_shared_components.eflyt.eflyt_case import Case
 
 from robot_framework import config, letters
 
 
-CASE_TYPES_TO_SKIP = (
-    "Børneflytning 1",
-    "Børneflytning 2",
-    "Børneflytning 3",
-    "Barn",
-    "Mindreårig",
-    "Sommerhus",
-    "Nordisk land"
-)
-
-
-@dataclass
-class Case:
-    """A dataclass representing an Eflyt case."""
-    case_number: str
-    deadline: str
-    case_types: list[str]
-
-
-def login(orchestrator_connection: OrchestratorConnection) -> webdriver.Chrome:
-    """Opens a browser and logs in to Eflyt.
-
-    Args:
-        orchestrator_connection: The connection to Orchestrator.
-
-    Returns:
-        A selenium browser object.
-    """
-    eflyt_creds = orchestrator_connection.get_credential(config.EFLYT_CREDS)
-
-    browser = webdriver.Chrome()
-    browser.maximize_window()
-    browser.get("https://notuskommunal.scandihealth.net/")
-
-    user_field = browser.find_element(By.ID, "Login1_UserName")
-    user_field.send_keys(eflyt_creds.username)
-
-    pass_field = browser.find_element(By.ID, "Login1_Password")
-    pass_field.send_keys(eflyt_creds.password)
-
-    browser.find_element(By.ID, "Login1_LoginImageButton").click()
-
-    browser.get("https://notuskommunal.scandihealth.net/web/SearchResulteFlyt.aspx")
-
-    return browser
-
-
-def search_cases(browser: webdriver.Chrome) -> None:
-    """Apply the correct filters in Eflyt and search the case list.
-
-    Args:
-        browser: The webdriver browser object.
-    """
-    sagstilstand_select = Select(browser.find_element(By.ID, "ctl00_ContentPlaceHolder1_SearchControl_ddlTilstand"))
-    sagstilstand_select.select_by_visible_text("I gang")
-
-    status_select = Select(browser.find_element(By.ID, "ctl00_ContentPlaceHolder1_SearchControl_ddlStatus"))
-    status_select.select_by_visible_text("Svarfrist overskredet")
-
-    search_date = date.today().strftime("%d%m%Y")
-    date_input = browser.find_element(By.ID, "ctl00_ContentPlaceHolder1_SearchControl_txtFlytteEndDato")
-    date_input.send_keys(search_date)
-
-    search_button = browser.find_element(By.ID, "ctl00_ContentPlaceHolder1_SearchControl_btnSearch")
-    search_button.click()
-
-
-def extract_cases(browser: webdriver.Chrome) -> list[Case]:
+def filter_cases(cases: list[Case]) -> list[Case]:
     """Extract and filter cases from the case table.
 
     Args:
@@ -92,46 +26,26 @@ def extract_cases(browser: webdriver.Chrome) -> list[Case]:
     Returns:
         A list of filtered case objects.
     """
-    table = browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_GridViewSearchResult")
-    rows = table.find_elements(By.TAG_NAME, "tr")
+    CASE_TYPES_TO_SKIP = (
+        "Børneflytning 1",
+        "Børneflytning 2",
+        "Børneflytning 3",
+        "Barn",
+        "Mindreårig",
+        "Sommerhus",
+        "Nordisk land"
+    )
 
-    # remove header row
-    rows.pop(0)
-
-    cases = []
-    for row in rows:
-        deadline = row.find_element(By.XPATH, "td[3]/a").text
-
-        if not deadline:
+    for case in cases:
+        if not case.deadline or case.deadline >= date.today():
+            cases.pop(case)
             continue
-
-        # Convert deadline to date object
-        day, month, year = deadline.split("-")
-        deadline = date(int(year), int(month), int(day))
-
-        # Check if deadline is passed
-        if deadline >= date.today():
+        if not ("Logivært" in case.case_types or "Boligselskab" in case.case_types):
+            cases.pop(case)
             continue
-
-        case_number = row.find_element(By.XPATH, "td[4]").text
-        case_types_text = row.find_element(By.XPATH, "td[5]").text
-
-        # If the case types ends with '...' we need to get the title instead
-        if case_types_text.endswith("..."):
-            case_types_text = row.find_element(By.XPATH, "td[5]").get_attribute("Title")
-
-        case_types = case_types_text.split(", ")
-
-        # Check if the case has a case type to skip
-        if any(case_type in CASE_TYPES_TO_SKIP for case_type in case_types):
+        if any(case_type in CASE_TYPES_TO_SKIP for case_type in case.case_types):
+            cases.pop(case)
             continue
-
-        # Check if the case has either Logivært or Boligselskab as case type
-        if not ("Logivært" in case_types or "Boligselskab" in case_types):
-            continue
-
-        cases.append(Case(case_number, deadline, case_types))
-
     return cases
 
 
@@ -152,7 +66,7 @@ def handle_case(browser: webdriver.Chrome, case: Case, orchestrator_connection: 
 
     orchestrator_connection.log_info(f"Beginning case: {case.case_number}")
 
-    open_case(browser, case)
+    eflyt.open_case.open_case(browser, case)
 
     if not check_sagslog(browser):
         orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Sprunget over pga. sagslog.")
@@ -161,7 +75,7 @@ def handle_case(browser: webdriver.Chrome, case: Case, orchestrator_connection: 
 
     today = date.today().strftime("%d-%m-%Y")
 
-    change_tab(browser, tab_index=0)
+    eflyt.case.change_tab(browser, tab_index=0)
     try:
         letter_title, logivaert_name = get_information_from_letter(browser)
     except PyPdfError:
@@ -170,8 +84,8 @@ def handle_case(browser: webdriver.Chrome, case: Case, orchestrator_connection: 
         return
 
     if "beboer" in letter_title:
-        change_tab(browser, tab_index=1)
-        if not check_beboer(browser, logivaert_name):
+        eflyt.case.change_tab(browser, tab_index=1)
+        if not eflyt.case.check_beboer(browser, logivaert_name):
             create_note(browser, f"{today} Besked fra robot: Logiværten, {logivaert_name}, bor ikke længere på adressen, så der er ikke afsendt en automatisk rykker.")
             orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Sprunget over da logivært ikke længere er beboer.")
             return
@@ -225,21 +139,6 @@ def check_queue(case: Case, orchestrator_connection: OrchestratorConnection) -> 
     return True
 
 
-def open_case(browser: webdriver.Chrome, case: Case):
-    """Open a case by searching for it's case number.
-
-    Args:
-        browser: The webdriver browser object.
-        case: The case to open.
-    """
-    # The id for both the search field and search button changes based on the current view hence the weird selectors.
-    case_input = browser.find_element(By.XPATH, '//input[contains(@id, "earchControl_txtSagNr")]')
-    case_input.clear()
-    case_input.send_keys(case.case_number)
-
-    browser.find_element(By.XPATH, '//input[contains(@id, "earchControl_btnSearch")]').click()
-
-
 def check_sagslog(browser: webdriver.Chrome) -> bool:
     """Check if a case should be handled based on the activities in the case log.
 
@@ -249,7 +148,7 @@ def check_sagslog(browser: webdriver.Chrome) -> bool:
     Returns:
         bool: True if the case should be handled, False if it should be skipped.
     """
-    change_tab(browser, tab_index=2)
+    eflyt.case.change_tab(browser, tab_index=2)
 
     sagslog_table = browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_sgcPersonTab_GridViewSagslog")
     rows = sagslog_table.find_elements(By.TAG_NAME, "tr")
@@ -387,29 +286,6 @@ def clear_downloads(orchestrator_connection: OrchestratorConnection):
     orchestrator_connection.log_trace(f"{delete_count} files deleted from downloads folder. {error_count} files couldn't be deleted.")
 
 
-def check_beboer(browser: webdriver.Chrome, beboer_name: str):
-    """Check if the given person is on the list of beboere.
-    The names are stripped of any whitespace to give a more precise result.
-
-    Args:
-        browser: The webdriver browser object.
-        beboer_name: The name to find in the beboer list.
-
-    Returns:
-        True if the beboer_name is on the list.
-    """
-    beboer_table = browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_becPersonTab_GridViewBeboere")
-    rows = beboer_table.find_elements(By.TAG_NAME, "tr")
-    rows.pop(0)
-
-    for row in rows:
-        name = row.find_element(By.XPATH, "td[3]").text
-        if name.replace(" ", "") == beboer_name.replace(" ", ""):
-            return True
-
-    return False
-
-
 def send_letter_to_anmelder(browser: webdriver.Chrome, case: Case, original_letter: str) -> bool:
     """Open the 'Breve' tab and send a letter to the anmelder.
 
@@ -421,7 +297,7 @@ def send_letter_to_anmelder(browser: webdriver.Chrome, case: Case, original_lett
     Returns:
         bool: True if the letter was sent.
     """
-    change_tab(browser, tab_index=3)
+    eflyt.case.change_tab(browser, tab_index=3)
 
     click_letter_template(browser, "- Logivært svarer ikke - brev til anmelder - partshø")
 
@@ -470,7 +346,7 @@ def send_letter_to_logivaert(browser: webdriver.Chrome, original_letter: str, lo
     Raises:
         ValueError: If the correct letter template couldn't be found.
     """
-    change_tab(browser, tab_index=3)
+    eflyt.case.change_tab(browser, tab_index=3)
 
     # Pick the correct letter template
     if "beboer" in original_letter and "manuel" in original_letter:
@@ -509,7 +385,7 @@ def check_off_original_letter(browser: webdriver.Chrome) -> None:
     Args:
         browser: The webdriver browser object.
     """
-    change_tab(browser, tab_index=0)
+    eflyt.case.change_tab(browser, tab_index=0)
     opgave_table = browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_moPersonTab_gvManuelOpfolgning")
     check_box = opgave_table.find_element(By.XPATH, "(//input[contains(@id, '_chkSvarmodtaget')])[last()]")
     check_box.click()
@@ -521,7 +397,7 @@ def change_deadline(browser: webdriver.Chrome) -> None:
     Args:
         browser: The webdriver browser object.
     """
-    change_tab(browser, tab_index=0)
+    eflyt.case.change_tab(browser, tab_index=0)
 
     new_deadline = (date.today() + timedelta(days=14)).strftime("%d-%m-%Y")
 
@@ -532,19 +408,9 @@ def change_deadline(browser: webdriver.Chrome) -> None:
     browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_ncPersonTab_btnDeadline").click()
 
 
-def change_tab(browser: webdriver.Chrome, tab_index: int):
-    """Change the tab in the case view e.g. 'Sagslog', 'Breve'.
-
-    Args:
-        browser: The webdriver browser object.
-        tab_index: The zero-based index of the tab to select.
-    """
-    browser.execute_script(f"__doPostBack('ctl00$ContentPlaceHolder2$ptFanePerson$ImgJournalMap','{tab_index}')")
-
-
 def create_note(browser: webdriver.Chrome, note_text: str):
     """Create a note on the case."""
-    change_tab(browser, tab_index=0)
+    eflyt.case.change_tab(browser, tab_index=0)
 
     browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_ncPersonTab_ButtonVisOpdater").click()
 
