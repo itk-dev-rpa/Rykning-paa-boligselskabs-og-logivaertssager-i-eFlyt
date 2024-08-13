@@ -19,7 +19,7 @@ dependencies = [
     "OpenOrchestrator == 1.*",
     "Pillow == 9.5.0",
     "selenium == 4.16.0",
-    "pypdf == 3.16.0"
+    "pypdf == 3.16.0",
     "itk_dev_shared_components == 2.4.*"
 ]
 
