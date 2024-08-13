@@ -26,7 +26,7 @@ def filter_cases(cases: list[Case]) -> list[Case]:
     Returns:
         A list of filtered case objects.
     """
-    CASE_TYPES_TO_SKIP = (
+    case_types_to_skip = (
         "Børneflytning 1",
         "Børneflytning 2",
         "Børneflytning 3",
@@ -40,7 +40,7 @@ def filter_cases(cases: list[Case]) -> list[Case]:
         case for case in cases
         if case.deadline and case.deadline.date() < date.today()
         and ("Logivært" in case.case_types or "Boligselskab" in case.case_types)
-        and not any(case_type in CASE_TYPES_TO_SKIP for case_type in case.case_types)
+        and not any(case_type in case_types_to_skip for case_type in case.case_types)
     ]
 
     return filtered_cases
