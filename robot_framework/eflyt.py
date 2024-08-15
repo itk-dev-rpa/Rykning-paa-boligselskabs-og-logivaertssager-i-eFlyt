@@ -2,7 +2,6 @@
 
 from datetime import date, timedelta
 import os
-import time
 
 import pypdf
 from pypdf.errors import PyPdfError
@@ -13,6 +12,7 @@ from OpenOrchestrator.orchestrator_connection.connection import OrchestratorConn
 from OpenOrchestrator.database.queues import QueueStatus
 from itk_dev_shared_components.eflyt import eflyt_case, eflyt_search
 from itk_dev_shared_components.eflyt.eflyt_case import Case
+from itk_dev_shared_components.misc import file_util
 
 from robot_framework import config, letters
 
@@ -179,10 +179,11 @@ def get_information_from_letter(browser: webdriver.Chrome) -> tuple[str]:
         PyPdfError: If the PDF file couldn't be read.
     """
     last_letter = browser.find_element(By.XPATH, '(//input[contains(@id, "_imbOpgave")])[last()]')
-    click_time = time.time()
     last_letter.click()
 
-    file_path = wait_for_download(click_time)
+    dir_path = os.path.join(os.path.expanduser("~"), "Downloads")
+    file_path = file_util.wait_for_download(dir_path, file_name=None, file_extension=".pdf", timeout=20)
+
     try:
         reader = pypdf.PdfReader(file_path)
     except PyPdfError as e:
@@ -261,31 +262,6 @@ def check_beboer(browser: webdriver.Chrome, beboer_name: str):
             return True
 
     return False
-
-
-def wait_for_download(start_time: float):
-    """Check the downloads folder every second for a file newer than start_time.
-
-    Args:
-        start_time: The time after which the file should appear.
-
-    Raises:
-        TimeoutError: If the file didn't appear within 20 seconds.
-
-    Returns:
-        The path of the file.
-    """
-    dir_path = os.path.join(os.path.expanduser("~"), "Downloads")
-
-    # Wait for up to 20 seconds for a new file to appear
-    for _ in range(20):
-        time.sleep(1)
-        for file in os.listdir(dir_path):
-            file_path = os.path.join(dir_path, file)
-            if file.endswith(".pdf") and os.path.getmtime(file_path) > start_time:
-                return file_path
-
-    raise TimeoutError(f"No file was detected in {dir_path} after 20 seconds.")
 
 
 def clear_downloads(orchestrator_connection: OrchestratorConnection):
