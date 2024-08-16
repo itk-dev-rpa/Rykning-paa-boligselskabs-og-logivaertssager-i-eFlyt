@@ -329,19 +329,20 @@ def clean_name(name: str) -> str:
     Returns:
         The cleaned name.
     """
-    # Convert to PascalCase
+    # Remove all spaces from the input
     name = name.replace(" ", "")
 
-    # Add a space before each upper case letter except the first
-    result = [name[0]]
+    cleaned_name = ""
 
-    for char in name[1:]:
-        if char.isupper():
-            result.extend([' ', char])
-        else:
-            result.append(char)
+    for i in range(len(name)):
+        # Check if the character is uppercase, is not the first character,
+        # and does not have a dash right before it
+        if name[i].isupper() and i != 0 and name[i-1] != '-':
+            cleaned_name += " "
 
-    return ''.join(result)
+        cleaned_name += name[i]
+
+    return cleaned_name
 
 
 def wait_for_download(start_time: float):
