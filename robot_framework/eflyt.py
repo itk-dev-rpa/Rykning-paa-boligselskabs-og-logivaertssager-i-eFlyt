@@ -334,6 +334,7 @@ def clean_name(name: str) -> str:
 
     cleaned_name = ""
 
+    # pylint: disable-next=consider-using-enumerate
     for i in range(len(name)):
         # Check if the character is uppercase, is not the first character,
         # and does not have a dash right before it
