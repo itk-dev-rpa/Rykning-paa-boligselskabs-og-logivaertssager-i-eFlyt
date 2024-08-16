@@ -1,8 +1,10 @@
 """This module contains the main process of the robot."""
 
 import os
+from datetime import date
 
 from OpenOrchestrator.orchestrator_connection.connection import OrchestratorConnection
+from itk_dev_shared_components.eflyt import eflyt_login, eflyt_search
 
 from robot_framework import eflyt
 
@@ -12,12 +14,15 @@ def process(orchestrator_connection: OrchestratorConnection) -> None:
     orchestrator_connection.log_trace("Running process.")
 
     orchestrator_connection.log_trace("Logging in to eflyt")
-    browser = eflyt.login(orchestrator_connection)
+    credentials = orchestrator_connection.get_credential("Eflyt")
+    browser = eflyt_login.login(credentials.username, credentials.password)
 
     orchestrator_connection.log_trace("Searching cases")
-    eflyt.search_cases(browser)
+    eflyt_search.search(browser, case_state="I gang", case_status="Svarfrist overskredet", to_date=date.today())
 
-    cases = eflyt.extract_cases(browser)
+    cases = eflyt_search.extract_cases(browser)
+    orchestrator_connection.log_info(f"Total cases found: {len(cases)}")
+    cases = eflyt.filter_cases(cases)
     orchestrator_connection.log_info(f"Relevant cases found: {len(cases)}")
 
     for case in cases:
