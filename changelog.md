@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Better handling of names containing dashes.
 
+### Changed
+
+ - Robot now uses Shared Components for Eflyt
+
 ## [1.1.2] - 2024-07-03
 
 ### Fixed
