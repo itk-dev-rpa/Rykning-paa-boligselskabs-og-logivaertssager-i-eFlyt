@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2024-08-19
+
+### Fixed
+
+- Better handling of names containing dashes.
+
+### Changed
+
+ - Robot now uses Shared Components for Eflyt
+
 ## [1.1.2] - 2024-07-03
 
 ### Fixed
@@ -36,7 +46,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release
 
-[Unreleased]: https://github.com/itk-dev-rpa/OpenOrchestrator/compare/1.1.1...HEAD
+[Unreleased]: https://github.com/itk-dev-rpa/OpenOrchestrator/compare/1.2.0...HEAD
+[1.2.0]: https://github.com/itk-dev-rpa/OpenOrchestrator/releases/tag/1.2.0
+[1.1.2]: https://github.com/itk-dev-rpa/OpenOrchestrator/releases/tag/1.1.2
 [1.1.1]: https://github.com/itk-dev-rpa/OpenOrchestrator/releases/tag/1.1.1
 [1.1.0]: https://github.com/itk-dev-rpa/OpenOrchestrator/releases/tag/1.1.0
 [1.0.0]: https://github.com/itk-dev-rpa/OpenOrchestrator/releases/tag/1.0.0
