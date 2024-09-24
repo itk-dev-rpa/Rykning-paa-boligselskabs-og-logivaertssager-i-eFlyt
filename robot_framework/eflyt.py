@@ -71,38 +71,36 @@ def handle_case(browser: webdriver.Chrome, case: Case, orchestrator_connection: 
         orchestrator_connection.log_info("Skipping: Activity in sagslog.")
         return
 
-    today = date.today().strftime("%d-%m-%Y")
-
     eflyt_case.change_tab(browser, tab_index=0)
     try:
         letter_title, logivaert_name = get_information_from_letter(browser)
     except PyPdfError:
-        create_note(browser, f"{today} Besked fra robot: Logiværtserklæringen kunne ikke læses.")
+        eflyt_case.add_note(browser, "Logiværtserklæringen kunne ikke læses.")
         orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Logiværtserklæringen kunne ikke læses.")
         return
 
     if "beboer" in letter_title:
         eflyt_case.change_tab(browser, tab_index=1)
         if not check_beboer(browser, logivaert_name):
-            create_note(browser, f"{today} Besked fra robot: Logiværten, {logivaert_name}, bor ikke længere på adressen, så der er ikke afsendt en automatisk rykker.")
+            eflyt_case.add_note(browser, f"Logiværten, {logivaert_name}, bor ikke længere på adressen, så der er ikke afsendt en automatisk rykker.")
             orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Sprunget over da logivært ikke længere er beboer.")
             return
 
     if send_letter_to_logivaert(browser, letter_title, logivaert_name):
-        create_note(browser, f"{today} Besked fra robot: Rykker sendt til logivært {logivaert_name}.")
+        eflyt_case.add_note(browser, f"Rykker sendt til logivært {logivaert_name}.")
     else:
-        create_note(browser, f"{today} Besked fra robot: Brev kunne ikke sendes til logivært {logivaert_name}, da de ikke er tilmeldt digital post.")
+        eflyt_case.add_note(browser, f"Brev kunne ikke sendes til logivært {logivaert_name}, da de ikke er tilmeldt digital post.")
         orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Logivært kan ikke modtage Digital Post.")
         return
 
     check_off_original_letter(browser)
     change_deadline(browser)
-    create_note(browser, f"{today} Besked fra robot: Deadline flyttet.")
+    eflyt_case.add_note(browser, "Deadline flyttet.")
 
     if send_letter_to_anmelder(browser, case, letter_title):
-        create_note(browser, f"{today} Besked fra robot: Brev sendt til anmelder.")
+        eflyt_case.add_note(browser, "Brev sendt til anmelder.")
     else:
-        create_note(browser, f"{today} Besked fra robot: Brev kunne ikke sendes til anmelder, da de ikke er tilmeldt digital post.")
+        eflyt_case.add_note(browser, "Brev kunne ikke sendes til anmelder, da de ikke er tilmeldt digital post.")
         orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Anmelder kan ikke modtage Digital Post.")
         return
 
@@ -407,20 +405,6 @@ def change_deadline(browser: webdriver.Chrome) -> None:
     deadline_input.send_keys(new_deadline)
 
     browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_ncPersonTab_btnDeadline").click()
-
-
-def create_note(browser: webdriver.Chrome, note_text: str):
-    """Create a note on the case."""
-    eflyt_case.change_tab(browser, tab_index=0)
-
-    browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_ncPersonTab_ButtonVisOpdater").click()
-
-    text_area = browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_ncPersonTab_txtVisOpdaterNote")
-
-    text_area.send_keys(note_text)
-    text_area.send_keys("\n\n")
-
-    browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_ncPersonTab_btnLongNoteUpdater").click()
 
 
 def click_letter_template(browser: webdriver.Chrome, letter_name: str):

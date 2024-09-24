@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.2.1] - 2024-09-20
+## [1.2.1] - 2024-09-24
+
+### Changed
+
+- Notes are now passed through shared_components
+- Robot now uses it's own set of credentials for logging into eFlyt
 
 ### Fixed
 
@@ -52,10 +57,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release
 
-[Unreleased]: https://github.com/itk-dev-rpa/OpenOrchestrator/compare/1.2.1..HEAD
-[1.2.1]: https://github.com/itk-dev-rpa/OpenOrchestrator/compare/1.2.1...HEAD
-[1.2.0]: https://github.com/itk-dev-rpa/OpenOrchestrator/releases/tag/1.2.0
-[1.1.2]: https://github.com/itk-dev-rpa/OpenOrchestrator/releases/tag/1.1.2
-[1.1.1]: https://github.com/itk-dev-rpa/OpenOrchestrator/releases/tag/1.1.1
-[1.1.0]: https://github.com/itk-dev-rpa/OpenOrchestrator/releases/tag/1.1.0
-[1.0.0]: https://github.com/itk-dev-rpa/OpenOrchestrator/releases/tag/1.0.0
+[Unreleased]: https://github.com/itk-dev-rpa/Rykning-paa-boligselskabs-og-logivaertssager-i-eFlyt/compare/1.2.1..HEAD
+[1.2.1]: https://github.com/itk-dev-rpa/Rykning-paa-boligselskabs-og-logivaertssager-i-eFlyt/compare/1.2.1...HEAD
+[1.2.0]: https://github.com/itk-dev-rpa/Rykning-paa-boligselskabs-og-logivaertssager-i-eFlyt/releases/tag/1.2.0
+[1.1.2]: https://github.com/itk-dev-rpa/Rykning-paa-boligselskabs-og-logivaertssager-i-eFlyt/releases/tag/1.1.2
+[1.1.1]: https://github.com/itk-dev-rpa/Rykning-paa-boligselskabs-og-logivaertssager-i-eFlyt/releases/tag/1.1.1
+[1.1.0]: https://github.com/itk-dev-rpa/Rykning-paa-boligselskabs-og-logivaertssager-i-eFlyt/releases/tag/1.1.0
+[1.0.0]: https://github.com/itk-dev-rpa/Rykning-paa-boligselskabs-og-logivaertssager-i-eFlyt/releases/tag/1.0.0
