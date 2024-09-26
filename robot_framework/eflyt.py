@@ -2,7 +2,6 @@
 
 from datetime import date, timedelta
 import os
-import time
 
 import pypdf
 from pypdf.errors import PyPdfError
@@ -301,7 +300,6 @@ def send_letter_to_anmelder(browser: webdriver.Chrome, case: Case, original_lett
 
     click_letter_template(browser, "- Logivært svarer ikke - brev til anmelder - partshø")
 
-    time.sleep(0.2)  # In case the browser is a bit slow and won't read the dropdown properly
     # Select the anmelder as the receiver
     select_letter_receiver(browser, "(anmelder)")
 
@@ -363,7 +361,6 @@ def send_letter_to_logivaert(browser: webdriver.Chrome, original_letter: str, lo
 
     click_letter_template(browser, template_name)
 
-    time.sleep(0.2)  # In case the browser is a bit slow and won't read the dropdown properly
     select_letter_receiver(browser, logivaert_name)
     select_letter_language(browser, original_letter)
 
