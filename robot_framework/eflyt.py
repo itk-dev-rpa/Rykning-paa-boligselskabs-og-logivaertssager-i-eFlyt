@@ -9,6 +9,9 @@ from pypdf.errors import PyPdfError
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 from OpenOrchestrator.orchestrator_connection.connection import OrchestratorConnection
 from OpenOrchestrator.database.queues import QueueStatus
 from itk_dev_shared_components.eflyt import eflyt_case, eflyt_search
@@ -462,9 +465,16 @@ def select_letter_receiver(browser: webdriver.Chrome, receiver_name: str) -> Non
         ValueError: If the given name doesn't match the static label.
     """
     # Check if there is a select for the receiver name
-    name_select = browser.find_elements(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_bcPersonTab_ddlModtager")
-    if len(name_select) != 0:
-        name_select = Select(name_select[0])
+    try:
+        # Wait for the dropdown to be present
+        name_select_element = WebDriverWait(browser, 2).until(
+            EC.presence_of_element_located((By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_bcPersonTab_ddlModtager"))
+        )
+        name_select = Select(name_select_element)
+
+        # Wait until the dropdown has more than one option
+        WebDriverWait(browser, 2).until(lambda browser: len(name_select.options) > 1)
+
         for i, option in enumerate(name_select.options):
             if receiver_name in option.text:
                 name_select.select_by_index(i)
@@ -472,10 +482,18 @@ def select_letter_receiver(browser: webdriver.Chrome, receiver_name: str) -> Non
 
         raise ValueError(f"'{receiver_name}' wasn't found on the list of possible receivers.")
 
+    except TimeoutException:
+        pass  # Continue to the next check if the dropdown is not found
+
     # If there's simply a label for the receiver, check if the name matches
-    name_label = browser.find_element(By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_bcPersonTab_lblModtagerName")
-    if receiver_name not in name_label.text:
-        raise ValueError(f"'{receiver_name}' didn't match the predefined receiver.")
+    try:
+        name_label = WebDriverWait(browser, 2).until(
+            EC.presence_of_element_located((By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_bcPersonTab_lblModtagerName"))
+        )
+        if receiver_name not in name_label.text:
+            raise ValueError(f"'{receiver_name}' didn't match the predefined receiver.")
+    except TimeoutException:
+        raise ValueError("Receiver name label did not load in time.")
 
 
 def check_digital_post_warning(browser: webdriver.Chrome) -> bool:
