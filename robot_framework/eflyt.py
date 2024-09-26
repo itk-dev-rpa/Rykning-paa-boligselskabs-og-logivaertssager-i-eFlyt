@@ -492,8 +492,8 @@ def select_letter_receiver(browser: webdriver.Chrome, receiver_name: str) -> Non
         )
         if receiver_name not in name_label.text:
             raise ValueError(f"'{receiver_name}' didn't match the predefined receiver.")
-    except TimeoutException:
-        raise ValueError("Receiver name label did not load in time.")
+    except TimeoutException as exc:
+        raise ValueError("Receiver name label did not load in time.") from exc
 
 
 def check_digital_post_warning(browser: webdriver.Chrome) -> bool:
