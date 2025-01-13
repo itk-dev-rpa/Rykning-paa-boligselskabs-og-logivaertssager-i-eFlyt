@@ -272,7 +272,7 @@ def send_letter_to_anmelder(browser: webdriver.Chrome, case: Case, original_lett
     click_letter_template(browser, "- Logivært svarer ikke - brev til anmelder - partshø")
 
     # Select the anmelder as the receiver
-    select_letter_receiver(browser, "(anmelder)")
+    select_letter_receiver(browser, "anmelder")
 
     select_letter_language(browser, original_letter)
 
