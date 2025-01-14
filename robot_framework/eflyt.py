@@ -209,39 +209,10 @@ def get_information_from_letter(browser: webdriver.Chrome) -> tuple[str]:
 
     # Get the top most text
     logivaert_name = sorted(text_parts)[0][1]
-    logivaert_name = clean_name(logivaert_name)
 
     letter_title = last_letter.find_element(By.XPATH, "../..//span").text
 
     return (letter_title, logivaert_name)
-
-
-def clean_name(name: str) -> str:
-    """Clean up a name that might contain too many spaces.
-    Reading from a pdf is sometimes messy.
-    E.g. "Jo hn Do e" -> "John Doe".
-
-    Args:
-        name: The name to clean.
-
-    Returns:
-        The cleaned name.
-    """
-    # Remove all spaces from the input
-    name = name.replace(" ", "")
-
-    cleaned_name = ""
-
-    # pylint: disable-next=consider-using-enumerate
-    for i in range(len(name)):
-        # Check if the character is uppercase, is not the first character,
-        # and does not have a dash right before it
-        if name[i].isupper() and i != 0 and name[i-1] != '-':
-            cleaned_name += " "
-
-        cleaned_name += name[i]
-
-    return cleaned_name
 
 
 def check_beboer(browser: webdriver.Chrome, beboer_name: str):
@@ -473,7 +444,7 @@ def select_letter_receiver(browser: webdriver.Chrome, receiver_name: str) -> Non
         WebDriverWait(browser, 2).until(lambda browser: len(name_select.options) > 1)
 
         for i, option in enumerate(name_select.options):
-            if receiver_name in option.text:
+            if receiver_name.replace(" ", "") in option.text.replace(" ", ""):
                 name_select.select_by_index(i)
                 return
 
@@ -487,7 +458,7 @@ def select_letter_receiver(browser: webdriver.Chrome, receiver_name: str) -> Non
         name_label = WebDriverWait(browser, 2).until(
             EC.presence_of_element_located((By.ID, "ctl00_ContentPlaceHolder2_ptFanePerson_bcPersonTab_lblModtagerName"))
         )
-        if receiver_name not in name_label.text:
+        if receiver_name.replace(" ", "") not in name_label.text.replace(" ", ""):
             raise ValueError(f"'{receiver_name}' didn't match the predefined receiver.")
     except TimeoutException as exc:
         raise ValueError("Receiver name label did not load in time.") from exc

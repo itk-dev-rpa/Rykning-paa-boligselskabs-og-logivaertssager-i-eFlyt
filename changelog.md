@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Changed "(anmelder)" to "anmelder" when looking for receiver of letter.
 
+## [1.2.3] - 2025-01-13
+
+- Removed incomplete space-removing function
+- Remove all spaces when testing for names in recipient list
+
 ## [1.2.1] - 2024-09-24
 
 ### Changed
