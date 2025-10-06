@@ -16,6 +16,7 @@ from OpenOrchestrator.database.queues import QueueStatus
 from itk_dev_shared_components.eflyt import eflyt_case, eflyt_search
 from itk_dev_shared_components.eflyt.eflyt_case import Case
 from itk_dev_shared_components.misc import file_util
+import itk_dev_event_log
 
 from robot_framework import config, letters
 
@@ -90,6 +91,7 @@ def handle_case(browser: webdriver.Chrome, case: Case, orchestrator_connection: 
 
     if send_letter_to_logivaert(browser, letter_title, logivaert_name):
         eflyt_case.add_note(browser, f"Rykker sendt til logivært {logivaert_name}.")
+        itk_dev_event_log.emit(orchestrator_connection.process_name, "Letter sent to host.")
     else:
         eflyt_case.add_note(browser, f"Brev kunne ikke sendes til logivært {logivaert_name}, da de ikke er tilmeldt digital post.")
         orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Logivært kan ikke modtage Digital Post.")
@@ -101,6 +103,7 @@ def handle_case(browser: webdriver.Chrome, case: Case, orchestrator_connection: 
 
     if send_letter_to_anmelder(browser, case, letter_title):
         eflyt_case.add_note(browser, "Brev sendt til anmelder.")
+        itk_dev_event_log.emit(orchestrator_connection.process_name, "Letter sent to notifier.")
     else:
         eflyt_case.add_note(browser, "Brev kunne ikke sendes til anmelder, da de ikke er tilmeldt digital post.")
         orchestrator_connection.set_queue_element_status(queue_element.id, QueueStatus.DONE, message="Anmelder kan ikke modtage Digital Post.")

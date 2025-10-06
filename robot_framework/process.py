@@ -5,6 +5,7 @@ from datetime import date
 
 from OpenOrchestrator.orchestrator_connection.connection import OrchestratorConnection
 from itk_dev_shared_components.eflyt import eflyt_login, eflyt_search
+import itk_dev_event_log
 
 from robot_framework import eflyt
 
@@ -12,6 +13,9 @@ from robot_framework import eflyt
 def process(orchestrator_connection: OrchestratorConnection) -> None:
     """Do the primary process of the robot."""
     orchestrator_connection.log_trace("Running process.")
+
+    event_log = orchestrator_connection.get_constant("Event Log")
+    itk_dev_event_log.setup_logging(event_log.value)
 
     orchestrator_connection.log_trace("Logging in to eflyt")
     credentials = orchestrator_connection.get_credential("Eflyt")
