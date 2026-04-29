@@ -1,6 +1,5 @@
 """This module contains the main process of the robot."""
 
-import os
 from datetime import date
 
 from OpenOrchestrator.orchestrator_connection.connection import OrchestratorConnection
@@ -32,10 +31,3 @@ def process(orchestrator_connection: OrchestratorConnection) -> None:
     for case in cases:
         eflyt.handle_case(browser, case, orchestrator_connection)
         eflyt.clear_downloads(orchestrator_connection)
-
-
-if __name__ == '__main__':
-    conn_string = os.getenv("OpenOrchestratorConnString")
-    crypto_key = os.getenv("OpenOrchestratorKey")
-    oc = OrchestratorConnection("Eflyt Test", conn_string, crypto_key, "", "")
-    process(oc)
